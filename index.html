@@ -1,13 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1a1030">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Pipe Merge">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="favicon.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Pipe Merge</title>
 <style>
 :root{--bg:#1a1030;color-scheme:dark}
@@ -33,7 +26,7 @@ own.skin=own.skin||[0];own.fx=own.fx||[0];eq.skin=eq.skin||0;eq.fx=eq.fx||0;
 const GOALS=[3,4,5,6,7],SHOTS=[12,22,38,65,120],gi=()=>Math.min(lvl-1,4);
 let items,cur,nxt,aimX,aiming,score,best=0,stash=0,over,lastShot,pops,lvl=1,shots=0,won=false,msg='',earned=0;
 try{best=+localStorage.getItem('sm_best')||0;stash=+localStorage.getItem('sm_stash')||0;lvl=+localStorage.getItem('sm_lvl')||1}catch(e){}
-const pick=()=>Math.random()<.6?0:Math.random()<.7?1:2;
+const pick=()=>Math.random()<.001?GOALS[gi()]:Math.random()<.6?0:Math.random()<.7?1:2;
 function reset(){items=[];cur=pick();nxt=pick();aimX=180;aiming=false;score=0;over=false;won=false;msg='';shots=SHOTS[gi()];lastShot=0;pops=[]}
 reset();
 function save(){try{localStorage.setItem('sm_best',best);localStorage.setItem('sm_stash',stash);localStorage.setItem('sm_lvl',lvl);localStorage.setItem('bm_own',JSON.stringify(own));localStorage.setItem('bm_eq',JSON.stringify(eq))}catch(e){}}
@@ -55,7 +48,7 @@ function step(){
   if(a.y<=T+r){a.y=T+r;hit=0}
   else for(const b of items){if(b===a||!b.st)continue;const dx=a.x-b.x,dy=a.y-b.y,m=r+R(b.t),d=Math.hypot(dx,dy);
    if(d<m){let nx=dx/(d||1),ny=dy/(d||1);nx+=Math.abs(nx)<.05?(Math.random()<.5?-.3:.3):nx>0?.3:-.3;const nl=Math.hypot(nx,ny);a.x=Math.max(L+r,Math.min(Rt-r,b.x+nx/nl*m));a.y=b.y+ny/nl*m;hit=b;break}}
-  if(hit!==null){const sp=Math.abs(a.vy)*.4;a.st=true;a.s=14;a.vy=0;a.ov=3.2;if(hit){hit.ov=-1.6;const dx=hit.x-a.x,dy=hit.y-a.y,d=Math.hypot(dx,dy)||1;hit.nx=dx/d*sp;hit.ny=dy/d*sp}}}
+  if(hit!==null){const sp=Math.abs(a.vy)*.4;a.st=true;a.s=14;a.vy=0;a.ov=3.2;if(a.t>=GOALS[gi()]&&!won){won=true;msg='JACKPOT!';earned=score+50*lvl+10*shots;stash+=earned;best=Math.max(best,earned);score=0;save();pops.push({x:a.x,y:a.y,t:0,c:'#ffd23f'})}if(hit){hit.ov=-1.6;const dx=hit.x-a.x,dy=hit.y-a.y,d=Math.hypot(dx,dy)||1;hit.nx=dx/d*sp;hit.ny=dy/d*sp}}}
  for(const a of items){if(!(a.nx||a.ny))continue;const r=R(a.t);a.x+=a.nx;a.y+=a.ny;a.nx*=.8;a.ny*=.8;if(Math.hypot(a.nx,a.ny)<.1)a.nx=a.ny=0;
   for(const c of items){if(c===a||!c.st)continue;const dx=a.x-c.x,dy=a.y-c.y,d=Math.hypot(dx,dy)||.01,m=r+R(c.t);if(d<m){const ux=dx/d,uy=dy/d,o=m-d;a.x+=ux*o;a.y+=uy*o;const sp=Math.hypot(a.nx,a.ny)*.65;if(sp>.15&&!(c.nx||c.ny)){c.nx=-ux*sp;c.ny=-uy*sp}}}
   if(a.x<L+r){a.x=L+r;a.nx=0}if(a.x>Rt-r){a.x=Rt-r;a.nx=0}if(a.y<T+r){a.y=T+r;a.ny=0}}
@@ -127,13 +120,14 @@ function draw(){if(scene!=='play'){drawMenu();return}
  pops=pops.filter(p=>p.t<25);
  if(!over){const r=R(cur),x=Math.max(L+r,Math.min(Rt-r,aimX));
   if(aiming){g.strokeStyle='rgba(255,255,255,.25)';g.setLineDash([4,8]);g.beginPath();g.moveTo(x,B-r);g.lineTo(pj(x,T)[0],T);g.stroke();g.setLineDash([])}
+  if(cur>=GOALS[gi()]){g.strokeStyle='#ffd23f';g.lineWidth=3;g.beginPath();g.arc(x,B-r-4,r*1.35+Math.sin(performance.now()/120)*3,0,7);g.stroke();g.fillStyle='#ffd23f';g.font='bold 14px Georgia,serif';g.fillText('JACKPOT!',x,B-r*2-14)}
   g.globalAlpha=.9;ball(x,B-r-4,cur);g.globalAlpha=1}
  g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.roundRect(4,128,62,70,10);g.fill();
  g.fillStyle='#cdbbf0';g.font='11px Georgia,serif';g.fillText('Next',35,142);ball(35,171,nxt,.7);
  g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.roundRect(294,128,62,86,10);g.fill();g.fillStyle='#cdbbf0';g.font='11px Georgia,serif';g.fillText('Make',325,142);drawObj(325,172,GOALS[gi()],17);g.fillText(TIERS[GOALS[gi()]][1],325,204);
  g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.roundRect(278,592,76,36,18);g.fill();g.fillStyle=shots<4?'#ff8a7a':'#e9ffd0';g.font='bold 15px Georgia,serif';g.fillText(`Shots ${shots}`,316,611);
  g.fillStyle='#7ee05a';g.beginPath();g.roundRect(110,592,140,36,18);g.fill();g.fillStyle='#10321f';g.font='bold 17px Georgia,serif';g.fillText('Collect',180,611);
- if(over||won){g.fillStyle='rgba(10,5,25,.82)';g.fillRect(0,0,360,640);g.fillStyle='#e9ffd0';g.font='bold 30px Georgia,serif';g.fillText(won?`Level ${lvl} clear`:msg,180,270);g.font='16px Georgia,serif';g.fillText(won?`+${earned} to your stash`:score?`Unbanked ${score} lost`:'Nothing banked',180,310);g.fillStyle='#b9a6e0';g.fillText(won?'Tap for next level':'Tap to retry',180,350)}
+ if(over||won){g.fillStyle='rgba(10,5,25,.82)';g.fillRect(0,0,360,640);g.fillStyle='#e9ffd0';g.font='bold 30px Georgia,serif';g.fillText(won?(msg||`Level ${lvl} clear`):msg,180,270);g.font='16px Georgia,serif';g.fillText(won?`+${earned} to your stash`:score?`Unbanked ${score} lost`:'Nothing banked',180,310);g.fillStyle='#b9a6e0';g.fillText(won?'Tap for next level':'Tap to retry',180,350)}
 }
 const hit=(x,y,a,b,w,h)=>x>=a&&x<=a+w&&y>=b&&y<=b+h;
 const btn=(x,y,w,h,txt,col)=>{g.fillStyle=col;g.beginPath();g.roundRect(x,y,w,h,h/2);g.fill();g.fillStyle='#10321f';g.font='bold 20px Georgia,serif';g.textAlign='center';g.textBaseline='middle';g.fillText(txt,x+w/2,y+h/2+1)};
@@ -175,5 +169,4 @@ function drawMenu(){tt++;const bc=BGS[eq.bg],bg=g.createLinearGradient(0,0,0,640
 }
 function loop(){if(scene==='play'&&!over&&!won){step();step()}draw();requestAnimationFrame(loop)}
 loop();
-</script><script>if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
-</body></html>
+</script></body></html>
